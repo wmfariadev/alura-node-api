@@ -1,3 +1,4 @@
+const axios = require('axios')
 const moment = require('moment')
 
 const conexao = require('../infraestrutura/conexao')
@@ -46,7 +47,17 @@ class Atendimento {
 
     buscaPorId(id, res) {
         const sql = `SELECT * FROM atendimento WHERE id = ${id}`
-        this.executeQueryGet(sql, res)
+        conexao.query(sql, async (err, result) => {
+            const atendimento = result[0]
+            const cpf = atendimento.cliente
+            if (err) {
+                res.status(400).json(err.sqlMessage)
+            } else {
+                const { data } = await axios.get(`http://localhost:8082/${cpf}`)
+                atendimento.cliente = data
+                res.status(200).json(atendimento)
+            }
+        })
     }
 
     executeQueryGet(sql, res) {
