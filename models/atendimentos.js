@@ -1,10 +1,11 @@
 const axios = require('axios')
 const moment = require('moment')
 
-const conexao = require('../infraestrutura/conexao')
+const conexao = require('../infraestrutura/database/conexao')
+const repositorio = require('../repositorios/atendimento')
 
 class Atendimento {
-    adiciona(atendimento, res) {
+    adiciona(atendimento) {
         const dateFormatSend = 'YYYY-MM-DD HH:mm:ss'
         const dateFormatReq = 'DD/MM/YYYY HH:mm'
         
@@ -30,14 +31,16 @@ class Atendimento {
         console.log(erros)
 
         if (erros.length > 0) {
-            res.status(400).json(erros)
-            return
+            return new Promise((resolve, reject) => reject(erros))
         }
 
         const atendimentoDatado = {...atendimento, dataCriacao, data}
-        const sql = `INSERT INTO atendimento SET ?`
+        return repositorio.adiciona(atendimentoDatado)
+            .then(result => {
+                const id = result.insertId
+                return { ...atendimento, id }
+            })
 
-        this.executeQueryPost(sql, atendimentoDatado, res)
     }
 
     lista(res) {

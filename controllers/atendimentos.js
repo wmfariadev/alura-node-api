@@ -7,6 +7,12 @@ module.exports = app => {
 
     app.post('/atendimentos', (req, res) => {
         const atendimento = req.body
-        Atendimento.adiciona(atendimento, res)  
+        Atendimento.adiciona(atendimento)
+            .then(atendimentoCadastrado => {
+                res.status(201).json(atendimentoCadastrado)
+            })
+            .catch(erro => {
+                res.status(400).json(erro)
+            })
     })
 }
