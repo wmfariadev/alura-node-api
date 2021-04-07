@@ -5,6 +5,31 @@ const conexao = require('../infraestrutura/database/conexao')
 const repositorio = require('../repositorios/atendimento')
 
 class Atendimento {
+    constructor() {
+        this.dataEhValida = ({data, dataCriacao}) => moment(data).isSameOrAfter(dataCriacao)
+        this.clienteEhValido = (tamanho) => tamanho >= 5
+
+        this.validacoes = [
+            {
+                nome:"cliente",
+                valido: this.clienteEhValido,
+                descricao: "Nome do cliente tem que ser maior que 4 caracteres"
+            },
+            {
+                nome:"data",
+                valido: this.dataEhValida,
+                descricao: "Data de atendimento não pode ser menor que a data atual"
+            },
+        ]
+
+        this.valida = parametros => this.validacoes.filter(campo => {
+            const { nome } = campo
+            const parametro = parametros[nome]
+
+            return !campo.valido(parametro)
+        })
+    }
+
     adiciona(atendimento) {
         const dateFormatSend = 'YYYY-MM-DD HH:mm:ss'
         const dateFormatReq = 'DD/MM/YYYY HH:mm'
@@ -12,23 +37,12 @@ class Atendimento {
         const data = moment(atendimento.data, dateFormatReq).format(dateFormatSend)
         const dataCriacao = moment().format(dateFormatSend)
 
-        let validacoes = [
-            {
-                campo:"cliente",
-                valido: atendimento.cliente.length >= 5,
-                descricao: "Nome do cliente tem que ser maior que 4 caracteres"
-            },
-            {
-                campo:"data",
-                valido: moment(data).isSameOrAfter(dataCriacao),
-                descricao: "Data de atendimento não pode ser menor que a data atual"
-            },
-        ]
+        const parametros = {
+            data: { data, dataCriacao },
+            cliente: { tamanho: atendimento.cliente.length }
+        }
 
-        let erros = validacoes.filter(item => !item.valido)
-
-        console.log(validacoes)
-        console.log(erros)
+        let erros = this.valida(parametros)
 
         if (erros.length > 0) {
             return new Promise((resolve, reject) => reject(erros))
